@@ -12,3 +12,16 @@
   flex: 4;
   padding: 20px;
 }
+
+.wrapper {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+  flex-direction: column;
+}
+
+.cards {
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+}
