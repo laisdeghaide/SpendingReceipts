@@ -1,41 +1,41 @@
-const fs = require('fs');
-const path = require('path');
-const { PdfParser } = require('./src/PdfParser');
-const { ReceiptParser } = require('./src/ReceiptParser');
-const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+const fs = require('fs')
+const path = require('path')
+const { PdfParser } = require('./src/PdfParser')
+const { ReceiptParser } = require('./src/ReceiptParser')
+const createCsvWriter = require('csv-writer').createObjectCsvWriter
 
-const OUTPUT_DIRECTORY = './receipts-parsed';
-const PDF_DIRECTORY = './costco-receipt-pdfs';
+const OUTPUT_DIRECTORY = './receipts-parsed'
+const PDF_DIRECTORY = './costco-receipt-pdfs'
 
 class ReceiptProcessor {
     constructor(pdfDirectory, outputDirectory) {
-        this.pdfDirectory = pdfDirectory;
-        this.outputDirectory = outputDirectory;
+        this.pdfDirectory = pdfDirectory
+        this.outputDirectory = outputDirectory
     }
 
     async run() {
-        this.resetOutputDir();
-        const pdfFiles = this.getPdfFiles();
-        const transactionsWithDate = [];
+        this.resetOutputDir()
+        const pdfFiles = this.getPdfFiles()
+        const transactionsWithDate = []
 
         for (const pdf of pdfFiles) {
-            const { transactions, date } = await this.parsePdf(pdf);
+            const { transactions, date } = await this.parsePdf(pdf)
 
             transactionsWithDate.push(...transactions.map(transaction => ({
                 ...transaction,
                 date: date
-            })));
+            })))
         }
 
-        this.writeCSV(transactionsWithDate);
+        this.writeCSV(transactionsWithDate)
     }
 
     resetOutputDir() {
         if (fs.existsSync(OUTPUT_DIRECTORY)) {
-            fs.rmSync(OUTPUT_DIRECTORY, { recursive: true });
+            fs.rmSync(OUTPUT_DIRECTORY, { recursive: true })
         }
 
-        fs.mkdirSync(OUTPUT_DIRECTORY);
+        fs.mkdirSync(OUTPUT_DIRECTORY)
     }
 
     getPdfFiles() {
@@ -43,31 +43,31 @@ class ReceiptProcessor {
             .readdirSync(PDF_DIRECTORY, { withFileTypes: true })
             .filter(file => file.isFile())
             .filter(file => path.extname(file.name) === '.pdf')
-            .map(file => `${PDF_DIRECTORY}/${file.name}`);
+            .map(file => `${PDF_DIRECTORY}/${file.name}`)
     }
 
     async parsePdf(pdf) {
-        const pdfParser = new PdfParser();
-        const receiptParser = new ReceiptParser();
+        const pdfParser = new PdfParser()
+        const receiptParser = new ReceiptParser()
 
-        const pdfData = await pdfParser.parse(pdf);
+        const pdfData = await pdfParser.parse(pdf)
 
-        return this.extractTransactions(pdfData, receiptParser);
+        return this.extractTransactions(pdfData, receiptParser)
     }
 
     extractTransactions(data, receiptParser) {
-        const lines = data.text.split('\n');
+        const lines = data.text.split('\n')
 
         lines.forEach(line => {
-            receiptParser.parseLine(line);
-        });
+            receiptParser.parseLine(line)
+        })
 
-        const receiptData = receiptParser.getReceiptData();
+        const receiptData = receiptParser.getReceiptData()
 
         return {
             transactions: receiptData.transactions,
             date: receiptData.metadata.date,
-        };
+        }
     }
 
     writeCSV(transactions) {
@@ -79,18 +79,18 @@ class ReceiptProcessor {
                 { id: 'itemName', title: 'Item Name' },
                 { id: 'amount', title: 'Amount' },
             ],
-        });
+        })
 
         csvWriter
             .writeRecords(transactions)
             .then(() => {
-                console.log('CSV file was written successfully');
+                console.log('CSV file was written successfully')
             })
             .catch((err) => {
-                console.error('Error writing CSV:', err);
-            });
+                console.error('Error writing CSV:', err)
+            })
     }
 }
 
-const processor = new ReceiptProcessor(PDF_DIRECTORY, OUTPUT_DIRECTORY);
-processor.run();
+const processor = new ReceiptProcessor(PDF_DIRECTORY, OUTPUT_DIRECTORY)
+processor.run()

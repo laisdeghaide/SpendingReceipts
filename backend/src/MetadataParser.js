@@ -31,7 +31,7 @@ class MetadataParser {
 
     extractDate(line) {
         const dateRegex = /P7\s(\d{1,2}\/\d{1,2}\/\d{4})/
-        const match = dateRegex.exec(line);
+        const match = dateRegex.exec(line)
         return match[1]
     }
 
