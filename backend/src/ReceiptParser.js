@@ -4,43 +4,43 @@ const { TransactionInfoParser } = require('./TransactionInfoParser')
 const { MetadataParser } = require('./MetadataParser')
 
 class ReceiptParser {
-    constructor() {
-        this.storeInfoParser = new StoreInfoParser() // store id, address 
-        this.membershipParser = new MembershipParser() // membership id
-        this.transactionInfoParser = new TransactionInfoParser() // list of product sku, product name, product price 
-        this.metadataParser = new MetadataParser() // total amount spent, total number of items sold, instant savings, date
-    }
+	constructor() {
+		this.storeInfoParser = new StoreInfoParser() // store id, address 
+		this.membershipParser = new MembershipParser() // membership id
+		this.transactionInfoParser = new TransactionInfoParser() // list of product sku, product name, product price 
+		this.metadataParser = new MetadataParser() // total amount spent, total number of items sold, instant savings, date
+	}
 
-    parseLine(line) {
-        if (this.storeInfoParser.isParsing()) {
-            this.storeInfoParser.parse(line)
-        }
+	parseLine(line) {
+		if (this.storeInfoParser.isParsing()) {
+			this.storeInfoParser.parse(line)
+		}
 
-        else if (this.membershipParser.isParsing()) {
-            this.membershipParser.parse(line)
-        }
+		else if (this.membershipParser.isParsing()) {
+			this.membershipParser.parse(line)
+		}
 
-        else if (this.transactionInfoParser.isParsing()) {
-            this.transactionInfoParser.parse(line)
-        }
+		else if (this.transactionInfoParser.isParsing()) {
+			this.transactionInfoParser.parse(line)
+		}
 
-        else {
-            this.metadataParser.parse(line)
-        }
-    }
+		else {
+			this.metadataParser.parse(line)
+		}
+	}
 
-    getReceiptData() {
-        return {
-            storeInfo: this.storeInfoParser.getStoreInfo(),
-            membershipNumber: this.membershipParser.getMembershipNumber(),
-            transactions: this.transactionInfoParser.transactions,
-            metadata: {
-                totalItemsSold: this.metadataParser.totalItemsSold,
-                instantSavings: this.metadataParser.instantSavings,
-                date: this.metadataParser.getDate(),
-            }
-        }
-    }
+	getReceiptData() {
+		return {
+			storeInfo: this.storeInfoParser.getStoreInfo(),
+			membershipNumber: this.membershipParser.getMembershipNumber(),
+			transactions: this.transactionInfoParser.transactions,
+			metadata: {
+				totalItemsSold: this.metadataParser.totalItemsSold,
+				instantSavings: this.metadataParser.instantSavings,
+				date: this.metadataParser.getDate(),
+			}
+		}
+	}
 }
 
 module.exports = { ReceiptParser }
