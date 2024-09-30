@@ -4,36 +4,27 @@ import MenuLink from "./menuLink";
 
 const menuItems = [
   {
-    title: "Pages",
-    list: [
-      {
-        title: "Dashboard",
-        path: "/dashboard",
-        icon: <MdDashboard />,
-      },
-      {
-        title: "Transactions",
-        path: "/dashboard/transactions",
-        icon: <MdAttachMoney />,
-      },
-    ],
+    title: "Dashboard",
+    path: "/dashboard",
+    icon: <MdDashboard />,
+  },
+  {
+    title: "Transactions",
+    path: "/dashboard/transactions",
+    icon: <MdAttachMoney />,
   },
 ]
 
 const Sidebar = () => {
   return (
     <div className={styles.container}>
-      <ul>
-        {menuItems.map((category) => (
-          <li key={category.title}>
-            <span className={styles.category}>{category.title}</span>
-            <ul>
-              {category.list.map((item) => (
-                <MenuLink item={item} key={item.title} />
-              ))}
-            </ul>
-          </li>
-        ))}
+      <ul className={styles.list}>
+        <span className={styles.category}>Pages</span>
+          <ul>
+            {menuItems.map((item) => (
+              <MenuLink item={item} key={item.title} />
+            ))}
+          </ul>
       </ul>
     </div>
   );
