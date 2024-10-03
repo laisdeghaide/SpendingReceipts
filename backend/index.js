@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+const express = require('express') 
 const { PdfParser } = require('./src/PdfParser')
 const { ReceiptParser } = require('./src/ReceiptParser')
 const createCsvWriter = require('csv-writer').createObjectCsvWriter
@@ -11,23 +12,33 @@ class ReceiptProcessor {
   constructor(pdfDirectory, outputDirectory) {
     this.pdfDirectory = pdfDirectory
     this.outputDirectory = outputDirectory
+    this.transactionsWithDate = []
+    this.fullTransactionsInfo = []
   }
 
   async run() {
     this.resetOutputDir()
     const pdfFiles = this.getPdfFiles()
-    const transactionsWithDate = []
+    this.transactionsWithDate = [] // Clear previous transactions
+    this.fullTransactionsInfo = []
 
     for (const pdf of pdfFiles) {
-      const { transactions, date } = await this.parsePdf(pdf)
+      const { transactions, metadata } = await this.parsePdf(pdf)
 
-      transactionsWithDate.push(...transactions.map(transaction => ({
+      // Used for CSV
+      this.transactionsWithDate.push(...transactions.map(transaction => ({
         ...transaction,
-        date: date
+        date: metadata.date
       })))
+
+      // Used for API/dashboard
+      this.fullTransactionsInfo.push({
+        metadata: metadata,
+        transactions: transactions
+      })
     }
 
-    this.writeCSV(transactionsWithDate)
+    this.writeCSV(this.transactionsWithDate)
   }
 
   resetOutputDir() {
@@ -66,7 +77,7 @@ class ReceiptProcessor {
 
     return {
       transactions: receiptData.transactions,
-      date: receiptData.metadata.date,
+      metadata: receiptData.metadata,
     }
   }
 
@@ -93,4 +104,19 @@ class ReceiptProcessor {
 }
 
 const processor = new ReceiptProcessor(PDF_DIRECTORY, OUTPUT_DIRECTORY)
-processor.run()
+const app = express()
+const port = 3001
+
+// Create API endpoint to return the processed transactions
+app.get('/api/receipts', async (req, res) => {
+  try {
+    await processor.run() // Process the PDFs and store the transactions
+    res.json(processor.fullTransactionsInfo) // Send the transactions as a response
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to process receipts' })
+  }
+})
+
+app.listen(port, () => {
+  console.log(`Backend API running at http://localhost:${port}`)
+})
