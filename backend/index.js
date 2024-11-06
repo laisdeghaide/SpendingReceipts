@@ -22,20 +22,27 @@ class ReceiptProcessor {
     this.transactionsWithDate = [] // Clear previous transactions
     this.fullTransactionsInfo = []
 
-    for (const pdf of pdfFiles) {
+    for (const [index, pdf] of pdfFiles.entries()) {
       const { transactions, metadata } = await this.parsePdf(pdf)
 
-      // Used for CSV
-      this.transactionsWithDate.push(...transactions.map(transaction => ({
-        ...transaction,
-        date: metadata.date
-      })))
-
-      // Used for API/dashboard
+      const metadataId = index + 1
+      
+      // Push metadata with unique id to fullTransactionsInfo
       this.fullTransactionsInfo.push({
-        metadata: metadata,
-        transactions: transactions
-      })
+        metadata: { id: metadataId, ...metadata },
+        transactions: transactions.map(transaction => ({
+          ...transaction,
+          metadataId  // Reference the metadataId directly in each transaction
+        }))
+      });
+
+      // Optionally, prepare CSV data
+      this.transactionsWithDate.push(
+        ...transactions.map(transaction => ({
+          ...transaction,
+          date: metadata.date
+        }))
+      )
     }
 
     this.writeCSV(this.transactionsWithDate)
@@ -108,10 +115,35 @@ const app = express()
 const port = 3001
 
 // Create API endpoint to return the processed transactions
-app.get('/api/receipts', async (req, res) => {
+app.get('/api/receipts/costco', async (req, res) => {
   try {
     await processor.run() // Process the PDFs and store the transactions
-    res.json(processor.fullTransactionsInfo) // Send the transactions as a response
+    res.set('Cache-Control', 'no-store') // Prevent caching in the browser
+    
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 20
+
+    const metadataList = processor.fullTransactionsInfo.map(entry => entry.metadata)
+    const allTransactions = processor.fullTransactionsInfo.flatMap(entry => entry.transactions)
+
+    const totalTransactions = allTransactions.length
+    const totalPages = Math.ceil(totalTransactions / limit)
+
+    const startIndex = (page - 1) * limit
+    const endIndex = page * limit
+    const paginatedTransactions = allTransactions.slice(startIndex, endIndex)
+
+    res.json({
+      metadata: metadataList,
+      transactions: paginatedTransactions,
+      currentPage: page,
+      totalPages: totalPages,
+      totalTransactions: totalTransactions,
+      next: page < totalPages ? `/api/receipts/costco?page=${page + 1}&limit=${limit}` : null,
+      previous: page > 1 ? `/api/receipts/costco?page=${page - 1}&limit=${limit}` : null
+    })
+  
+    // Send the transactions as a response
   } catch (error) {
     res.status(500).json({ error: 'Failed to process receipts' })
   }
